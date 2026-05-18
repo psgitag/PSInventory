@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { 
   Home as HomeIcon, Info, ContactPage, Help, ShoppingBag, 
-  Search, Close, ImageIcon 
+  Search, Close, Image 
 } from '@mui/icons-material';
 
 // --- MATERIAL DESIGN 3 THEME CONFIGURATION ---
