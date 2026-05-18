@@ -11,14 +11,18 @@ import {
   Search, Close, Image 
 } from '@mui/icons-material';
 
-// --- MATERIAL DESIGN 3 THEME CONFIGURATION ---
+// --- UPDATED MATERIAL DESIGN 3 THEME CONFIGURATION ---
 const md3Theme = createTheme({
   palette: {
     mode: 'light',
     primary: { main: '#6750A4' },      // M3 Baseline Purple
-    secondary: { main: '#625B71' },    // M3 Secondary Cluster
+    secondary: { main: '#625B71' },    // M3 Secondary
     background: { default: '#FEF7FF', paper: '#FFFFFF' },
     surfaceVariant: '#E7E0EC',
+    text: {
+      primary: '#1D1B20',              // Dark charcoal for main text
+      secondary: '#49454F'             // Highly legible gray for secondary text
+    }
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -27,6 +31,21 @@ const md3Theme = createTheme({
   components: {
     MuiButton: { styleOverrides: { root: { borderRadius: '100px', textTransform: 'none' } } },
     MuiPaper: { styleOverrides: { root: { borderRadius: '12px' } } },
+    
+    // --- THIS FIXED THE TAB CONTRAST ---
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          color: '#49454F',            // Darker color for unselected tabs
+          fontWeight: '600',           // Slightly bolder text for easier reading
+          opacity: 0.85,               // Keeps it crisp
+          '&.Mui-selected': {
+            color: '#6750A4',          // Primary purple for the active tab
+            opacity: 1,
+          },
+        },
+      },
+    },
   }
 });
 
