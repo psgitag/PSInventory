@@ -99,21 +99,49 @@ export default function App() {
   );
 }
 
-// --- NAVIGATION APP BAR COMPONENT ---
+// --- UPDATED NAVIGATION APP BAR COMPONENT ---
 function NavigationHeader() {
   const location = useLocation();
+
+  // Helper function to handle button styles dynamically
+  const getButtonStyles = (path) => {
+    const isActive = location.pathname === path;
+    return {
+      borderRadius: '100px',
+      textTransform: 'none',
+      fontWeight: '600',
+      padding: '6px 16px',
+      // If active, use M3 Purple. If inactive, use highly visible charcoal gray
+      color: isActive ? '#6750A4' : '#49454F', 
+      backgroundColor: isActive ? 'rgba(103, 80, 164, 0.08)' : 'transparent',
+      '&:hover': {
+        backgroundColor: 'rgba(103, 80, 164, 0.04)',
+      }
+    };
+  };
+
   return (
     <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
       <Toolbar>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'primary.main', fontWeight: 'bold' }}>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: '#6750A4', fontWeight: 'bold' }}>
           GI Handicrafts
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button component={Link} to="/" startIcon={<HomeIcon />} color={location.pathname === '/' ? 'primary' : 'inherit'}>Home</Button>
-          <Button component={Link} to="/about" startIcon={<Info />} color={location.pathname === '/about' ? 'primary' : 'inherit'}>About</Button>
-          <Button component={Link} to="/shop" startIcon={<ShoppingBag />} color={location.pathname === '/shop' ? 'primary' : 'inherit'}>Shop</Button>
-          <Button component={Link} to="/faq" startIcon={<Help />} color={location.pathname === '/faq' ? 'primary' : 'inherit'}>FAQ</Button>
-          <Button component={Link} to="/contact" startIcon={<ContactPage />} color={location.pathname === '/contact' ? 'primary' : 'inherit'}>Contact</Button>
+          <Button component={Link} to="/" startIcon={<HomeIcon />} sx={getButtonStyles('/')}>
+            Home
+          </Button>
+          <Button component={Link} to="/about" startIcon={<Info />} sx={getButtonStyles('/about')}>
+            About
+          </Button>
+          <Button component={Link} to="/shop" startIcon={<ShoppingBag />} sx={getButtonStyles('/shop')}>
+            Shop
+          </Button>
+          <Button component={Link} to="/faq" startIcon={<Help />} sx={getButtonStyles('/faq')}>
+            FAQ
+          </Button>
+          <Button component={Link} to="/contact" startIcon={<ContactPage />} sx={getButtonStyles('/contact')}>
+            Contact
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>
