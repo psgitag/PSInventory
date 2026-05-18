@@ -229,7 +229,7 @@ function ShopView({ allInventory }) {
                             variant="outlined" 
                             color="success" 
                             size="small" 
-                            startIcon={<ImageIcon />}
+                            startIcon={<Image />}
                             onClick={() => setActiveImage(imagePath)}
                           >
                             View
