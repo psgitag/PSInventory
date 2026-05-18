@@ -1,196 +1,294 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { 
+  ThemeProvider, createTheme, CssBaseline, AppBar, Toolbar, Typography, 
+  Button, Container, Box, Tabs, Tab, TextField, Table, TableBody, 
+  TableCell, TableContainer, TableHead, TableRow, Paper, TableSortLabel,
+  CircularProgress, IconButton, Dialog, DialogContent
+} from '@mui/material';
+import { 
+  Home as HomeIcon, Info, ContactPage, Help, ShoppingBag, 
+  Search, Close, ImageIcon 
+} from '@mui/icons-material';
 
-function App() {
-  // Store ALL sheets data here
+// --- MATERIAL DESIGN 3 THEME CONFIGURATION ---
+const md3Theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: { main: '#6750A4' },      // M3 Baseline Purple
+    secondary: { main: '#625B71' },    // M3 Secondary Cluster
+    background: { default: '#FEF7FF', paper: '#FFFFFF' },
+    surfaceVariant: '#E7E0EC',
+  },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h4: { fontWeight: 700, color: '#1D1B20' },
+  },
+  components: {
+    MuiButton: { styleOverrides: { root: { borderRadius: '100px', textTransform: 'none' } } },
+    MuiPaper: { styleOverrides: { root: { borderRadius: '12px' } } },
+  }
+});
+
+const API_URL = "https://script.google.com/macros/s/AKfycbzJbVy3ZnM5gXLgRJVnjhQrpTxFJRUIUO1JnAn_63ZyYgs1YktXRYuCw3IBMpm43x0y/exec";
+
+const tabNames = [
+  "Ganjifa cards of Mysore", "Pattachitra", "Channapatna Toys & Dolls", 
+  "Mysore Rosewood Inlay", "Sandur Lambani Embroidery", 
+  "Udayagiri Wooden Cutlery", "Udupi Saree", "ScrewPine"
+];
+
+export default function App() {
   const [allInventory, setAllInventory] = useState({});
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("Ganjifa cards of Mysore");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-  const [activeImage, setActiveImage] = useState(null);
 
-  const tabs = [
-    "Ganjifa cards of Mysore", 
-    "Pattachitra", 
-    "Channapatna Toys & Dolls", 
-    "Mysore Rosewood Inlay",
-    "Sandur Lambani Embroidery",
-    "Udayagiri Wooden Cutlery",
-    "Udupi Saree",
-    "ScrewPine"
-  ]; 
-
-  const API_URL = "https://script.google.com/macros/s/AKfycbzJbVy3ZnM5gXLgRJVnjhQrpTxFJRUIUO1JnAn_63ZyYgs1YktXRYuCw3IBMpm43x0y/exec";
-
-  // Fetch EVERYTHING only once on startup
+  // Fetch Excel data ONCE on startup to maintain instant tab switching
   useEffect(() => {
     fetch(API_URL)
       .then(res => res.json())
-      .then(data => {
-        setAllInventory(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Fetch error:", err);
-        setLoading(false);
-      });
+      .then(data => { setAllInventory(data); setLoading(false); })
+      .catch(err => { console.error("Fetch error:", err); setLoading(false); });
   }, []);
-
-  // Get current active tab items from memory (Blazing fast!)
-  const items = useMemo(() => {
-    return allInventory[activeTab] || [];
-  }, [allInventory, activeTab]);
-
-  const processedItems = useMemo(() => {
-    let filteredResults = items.filter((item) => {
-      if (!item) return false;
-      return Object.values(item).some((val) =>
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    });
-
-    if (sortConfig.key !== null) {
-      filteredResults.sort((a, b) => {
-        let valA = a[sortConfig.key];
-        let valB = b[sortConfig.key];
-        const numA = parseFloat(valA);
-        const numB = parseFloat(valB);
-        if (!isNaN(numA) && !isNaN(numB)) {
-          valA = numA;
-          valB = numB;
-        }
-        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-    return filteredResults;
-  }, [items, sortConfig, searchTerm]);
-
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-  };
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif', flexDirection: 'column', gap: '10px' }}>
-        <h2>Syncing with Google Sheets...</h2>
-        <p style={{ color: '#666' }}>Downloading entire inventory for offline speed.</p>
-      </div>
+      <ThemeProvider theme={md3Theme}>
+        <Box display="flex" height="100vh" flexDirection="column" justifyContent="center" alignItems="center" bg="background.default">
+          <CircularProgress color="primary" />
+          <Typography variant="h6" sx={{ mt: 2, color: 'secondary.main' }}>Syncing GI Inventory...</Typography>
+        </Box>
+      </ThemeProvider>
     );
   }
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ color: '#333' }}>GI Handicrafts Inventory</h1>
+    <ThemeProvider theme={md3Theme}>
+      <CssBaseline />
+      <Router>
+        <NavigationHeader />
+        <Container sx={{ mt: 4, mb: 4, minHeight: '80vh' }}>
+          <Routes>
+            <Route path="/" element={<HomeView />} />
+            <Route path="/about" element={<AboutView />} />
+            <Route path="/shop" element={<ShopView allInventory={allInventory} />} />
+            <Route path="/faq" element={<FaqView />} />
+            <Route path="/contact" element={<ContactView />} />
+          </Routes>
+        </Container>
+      </Router>
+    </ThemeProvider>
+  );
+}
 
-      {/* --- TABS & SEARCH --- */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {tabs.map(tab => (
-            <button 
-              key={tab} 
-              onClick={() => {
-                setActiveTab(tab); 
-                setSearchTerm("");
-                setSortConfig({ key: null, direction: 'asc' });
-              }} 
-              style={{
-                padding: '8px 16px', cursor: 'pointer',
-                backgroundColor: activeTab === tab ? '#007bff' : '#f0f0f0',
-                color: activeTab === tab ? 'white' : '#333',
-                border: '1px solid #ddd', borderRadius: '4px',
-                fontSize: '14px', transition: '0.2s'
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+// --- NAVIGATION APP BAR COMPONENT ---
+function NavigationHeader() {
+  const location = useLocation();
+  return (
+    <AppBar position="sticky" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+      <Toolbar>
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'primary.main', fontWeight: 'bold' }}>
+          GI Handicrafts
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button component={Link} to="/" startIcon={<HomeIcon />} color={location.pathname === '/' ? 'primary' : 'inherit'}>Home</Button>
+          <Button component={Link} to="/about" startIcon={<Info />} color={location.pathname === '/about' ? 'primary' : 'inherit'}>About</Button>
+          <Button component={Link} to="/shop" startIcon={<ShoppingBag />} color={location.pathname === '/shop' ? 'primary' : 'inherit'}>Shop</Button>
+          <Button component={Link} to="/faq" startIcon={<Help />} color={location.pathname === '/faq' ? 'primary' : 'inherit'}>FAQ</Button>
+          <Button component={Link} to="/contact" startIcon={<ContactPage />} color={location.pathname === '/contact' ? 'primary' : 'inherit'}>Contact</Button>
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
+}
 
-        <input 
-          type="text"
-          placeholder={`Instant search in ${activeTab}...`}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: '10px', width: '100%', maxWidth: '300px', borderRadius: '5px', border: '1px solid #ccc', outline: 'none' }}
-        />
-      </div>
+// --- 1. HOME VIEW ---
+function HomeView() {
+  return (
+    <Box sx={{ textAlign: 'center', py: 8 }}>
+      <Typography variant="h4" gutterBottom color="primary">Welcome to GI Handicrafts Explorer</Typography>
+      <Typography variant="body1" color="text.secondary" sx={{ maxW: '600px', mx: 'auto', mb: 4 }}>
+        Discover and track authentic Geographical Indication (GI) protected crafts across regions. Beautifully cataloged and verified in real time.
+      </Typography>
+      <Button component={Link} to="/shop" variant="contained" size="large" startIcon={<ShoppingBag />}>
+        Browse Inventory
+      </Button>
+    </Box>
+  );
+}
 
-      {/* --- DATA TABLE --- */}
-      <div style={{ overflowX: 'auto', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', borderRadius: '8px' }}>
-        <table border="0" cellPadding="12" style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
-          <thead style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
-            <tr>
+// --- 2. ABOUT VIEW ---
+function AboutView() {
+  return (
+    <Box sx={{ py: 2 }}>
+      <Typography variant="h4" gutterBottom>About Geographical Indications</Typography>
+      <Typography variant="body1" paragraph>
+        A Geographical Indication (GI) is a sign used on products that have a specific geographical origin and possess qualities or a reputation that are due to that origin.
+      </Typography>
+      <Typography variant="body1">
+        This platform ensures artisans have their stock monitored smoothly while allowing administrative dashboards to review batch quantities dynamically.
+      </Typography>
+    </Box>
+  );
+}
+
+// --- 3. SHOP / INVENTORY VIEW (EXCEL TAB ENGINE) ---
+function ShopView({ allInventory }) {
+  const [currentTabIdx, setCurrentTabIdx] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [activeImage, setActiveImage] = useState(null);
+
+  const activeTabName = tabNames[currentTabIdx];
+  const items = allInventory[activeTabName] || [];
+
+  const handleSort = (key) => {
+    const isAsc = sortKey === key && sortDirection === 'asc';
+    setSortDirection(isAsc ? 'desc' : 'asc');
+    setSortKey(key);
+  };
+
+  const processedItems = useMemo(() => {
+    let results = [...items];
+    if (searchTerm) {
+      results = results.filter(item => 
+        Object.values(item).some(val => String(val).toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+    if (sortKey) {
+      results.sort((a, b) => {
+        let valA = a[sortKey], valB = b[sortKey];
+        const numA = parseFloat(valA), numB = parseFloat(valB);
+        if (!isNaN(numA) && !isNaN(numB)) { valA = numA; valB = numB; }
+        if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return results;
+  }, [items, searchTerm, sortKey, sortDirection]);
+
+  return (
+    <Box>
+      <Typography variant="h4" sx={{ mb: 3 }}>Product Catalog</Typography>
+      
+      {/* M3 Style Dynamic Tabs */}
+      <Tabs 
+        value={currentTabIdx} 
+        onChange={(e, newIdx) => { setCurrentTabIdx(newIdx); setSearchTerm(""); setSortKey(null); }}
+        variant="scrollable" 
+        scrollButtons="auto"
+        sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+      >
+        {tabNames.map((name, i) => <Tab label={name} key={i} />)}
+      </Tabs>
+
+      {/* Modern Search Field */}
+      <TextField
+        fullWidth
+        variant="outlined"
+        placeholder={`Search items inside ${activeTabName}...`}
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        InputProps={{ startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} /> }}
+        sx={{ mb: 3, bgcolor: 'background.paper', borderRadius: 1 }}
+      />
+
+      {/* Material Data Table */}
+      <TableContainer component={Paper} elevation={1}>
+        <Table>
+          <TableHead sx={{ bgcolor: 'rgba(103, 80, 164, 0.05)' }}>
+            <TableRow>
               {items.length > 0 && Object.keys(items[0]).map(key => (
-                <th 
-                  key={key} 
-                  onClick={() => requestSort(key)} 
-                  style={{ cursor: 'pointer', textAlign: 'left', whiteSpace: 'nowrap', color: '#495057', fontSize: '14px', textTransform: 'uppercase' }}
-                >
-                  {key} {sortConfig.key === key ? (sortConfig.direction === 'asc' ? ' 🔼' : ' 🔽') : ' ↕️'}
-                </th>
+                <TableCell key={key}>
+                  <TableSortLabel
+                    active={sortKey === key}
+                    direction={sortKey === key ? sortDirection : 'asc'}
+                    onClick={() => handleSort(key)}
+                    sx={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '12px' }}
+                  >
+                    {key}
+                  </TableSortLabel>
+                </TableCell>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {processedItems.length > 0 ? (
-              processedItems.map((item, index) => (
-                <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                  {Object.entries(item).map(([key, val], i) => {
+              processedItems.map((item, rIdx) => (
+                <TableRow key={rIdx} hover>
+                  {Object.entries(item).map(([key, val], cIdx) => {
                     const cleanKey = key.toLowerCase().replace(/[\s_]/g, '');
                     const imagePath = String(val);
                     const hasImage = imagePath.startsWith('http') || imagePath.startsWith('/images/');
 
                     return (
-                      <td key={i} style={{ fontSize: '14px', color: '#555' }}>
+                      <TableCell key={cIdx}>
                         {cleanKey.includes('image') && hasImage ? (
-                          <button 
+                          <Button 
+                            variant="outlined" 
+                            color="success" 
+                            size="small" 
+                            startIcon={<ImageIcon />}
                             onClick={() => setActiveImage(imagePath)}
-                            style={{
-                              backgroundColor: '#28a745', color: 'white', border: 'none',
-                              padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'
-                            }}
                           >
-                            🖼️ View Image
-                          </button>
+                            View
+                          </Button>
                         ) : val === "" ? "-" : String(val)}
-                      </td>
+                      </TableCell>
                     );
                   })}
-                </tr>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan="100%" style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
-                  No records found.
-                </td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={100} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  No records matching your filters were found.
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-      {/* --- IMAGE MODAL --- */}
-      {activeImage && (
-        <div 
-          onClick={() => setActiveImage(null)}
-          style={{
-            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-            backgroundColor: 'rgba(0,0,0,0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000
-          }}
-        >
-          <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '8px', maxWidth: '90%', maxHeight: '90%', position: 'relative' }}>
-            <img src={activeImage} alt="Product" style={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: '4px', display: 'block' }} />
-          </div>
-        </div>
-      )}
-    </div>
-  )
+      {/* M3 Dialog popup overlay for On-Demand Images */}
+      <Dialog open={Boolean(activeImage)} onClose={() => setActiveImage(null)} maxWidth="md">
+        <Box sx={{ position: 'relative', p: 1 }}>
+          <IconButton onClick={() => setActiveImage(null)} sx={{ position: 'absolute', right: 8, top: 8, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' } }}>
+            <Close />
+          </IconButton>
+          <DialogContent sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <img src={activeImage} alt="Product Detail" style={{ maxWidth: '100%', maxHeight: '75vh', display: 'block', borderRadius: '4px' }} />
+          </DialogContent>
+        </Box>
+      </Dialog>
+    </Box>
+  );
 }
 
-export default App
+// --- 4. FAQ VIEW ---
+function FaqView() {
+  return (
+    <Box sx={{ py: 2 }}>
+      <Typography variant="h4" gutterBottom>Frequently Asked Questions</Typography>
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Q: How quickly does inventory update?</Typography>
+        <Typography variant="body2" color="text.secondary" paragraph>A: Instantly. When you refresh the application, it pulls raw data straight from your master Google Sheet rows.</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Q: Are the photos eating up heavy bandwidth data?</Typography>
+        <Typography variant="body2" color="text.secondary">A: No. We optimize them to WebP and use an on-demand trigger, saving you bandwidth data until you click View.</Typography>
+      </Box>
+    </Box>
+  );
+}
+
+// --- 5. CONTACT VIEW ---
+function ContactView() {
+  return (
+    <Box sx={{ py: 2 }}>
+      <Typography variant="h4" gutterBottom>Contact Procurement & Warehousing</Typography>
+      <Typography variant="body1" color="text.secondary">
+        For updates regarding wholesale batches, artisan enlistment, or technical dashboard clearance, please get in touch with the central inventory operations manager.
+      </Typography>
+    </Box>
+  );
+}
