@@ -54,9 +54,9 @@ const md3Theme = createTheme({
 const API_URL = "https://script.google.com/macros/s/AKfycbw59fW09SooYHMquFIuTiG8yvPkSdidYqUBcbRj-zUsBjE_uR6Kejw6iC-XwTd8E6LBzA/exec";
 
 const tabNames = [
-  "Ganjifa cards of Mysore", "Pattachitra", "Channapatna Toys & Dolls", 
-  "Mysore Rosewood Inlay", "Sandur Lambani Embroidery", 
-  "Udayagiri Wooden Cutlery", "Udupi Saree", "ScrewPine"
+  "Ganjifa", "Pattachitra", "Channapatna Toys", 
+  "Rosewood Inlay", "Sandur Lambani Embroidery", 
+  "Udupi Saree", "Udayagiri Wooden Cutlery", "ScrewPine"
 ];
 
 export default function App() {
