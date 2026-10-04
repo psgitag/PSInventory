@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { 
   ThemeProvider, createTheme, CssBaseline, AppBar, Toolbar, Typography, 
@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { 
   Home as HomeIcon, Info, ContactPage, Help, ShoppingBag, 
-  Search, Close, Image 
+  Search, Close, Image, Refresh as RefreshIcon 
 } from '@mui/icons-material';
 
 // --- UPDATED MATERIAL DESIGN 3 THEME CONFIGURATION ---
@@ -31,8 +31,6 @@ const md3Theme = createTheme({
   components: {
     MuiButton: { styleOverrides: { root: { borderRadius: '100px', textTransform: 'none' } } },
     MuiPaper: { styleOverrides: { root: { borderRadius: '12px' } } },
-    
-    // --- THIS FIXED THE TAB CONTRAST ---
     MuiTab: {
       styleOverrides: {
         root: {
@@ -62,19 +60,36 @@ const tabNames = [
 export default function App() {
   const [allInventory, setAllInventory] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Fetch Excel data ONCE on startup to maintain instant tab switching
-  useEffect(() => {
+  // Centralized fetch function
+  const fetchInventory = useCallback((isManual = false) => {
+    if (isManual) setIsRefreshing(true);
+    else setLoading(true);
+
     fetch(API_URL)
       .then(res => res.json())
-      .then(data => { setAllInventory(data); setLoading(false); })
-      .catch(err => { console.error("Fetch error:", err); setLoading(false); });
+      .then(data => { 
+        setAllInventory(data); 
+        setLoading(false); 
+        setIsRefreshing(false);
+      })
+      .catch(err => { 
+        console.error("Fetch error:", err); 
+        setLoading(false); 
+        setIsRefreshing(false);
+      });
   }, []);
+
+  // Fetch Excel data on startup
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   if (loading) {
     return (
       <ThemeProvider theme={md3Theme}>
-        <Box display="flex" height="100vh" flexDirection="column" justifyContent="center" alignItems="center" bg="background.default">
+        <Box display="flex" height="100vh" flexDirection="column" justifyContent="center" alignItems="center" bgcolor="background.default">
           <CircularProgress color="primary" />
           <Typography variant="h6" sx={{ mt: 2, color: 'secondary.main' }}>Syncing GI Inventory...</Typography>
         </Box>
@@ -91,7 +106,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomeView />} />
             <Route path="/about" element={<AboutView />} />
-            <Route path="/shop" element={<ShopView allInventory={allInventory} />} />
+            <Route path="/shop" element={<ShopView allInventory={allInventory} onRefresh={() => fetchInventory(true)} isRefreshing={isRefreshing} />} />
             <Route path="/faq" element={<FaqView />} />
             <Route path="/contact" element={<ContactView />} />
           </Routes>
@@ -101,11 +116,10 @@ export default function App() {
   );
 }
 
-// --- UPDATED NAVIGATION APP BAR COMPONENT ---
+// --- NAVIGATION APP BAR COMPONENT ---
 function NavigationHeader() {
   const location = useLocation();
 
-  // Helper function to handle button styles dynamically
   const getButtonStyles = (path) => {
     const isActive = location.pathname === path;
     return {
@@ -113,7 +127,6 @@ function NavigationHeader() {
       textTransform: 'none',
       fontWeight: '600',
       padding: '6px 16px',
-      // If active, use M3 Purple. If inactive, use highly visible charcoal gray
       color: isActive ? '#6750A4' : '#49454F', 
       backgroundColor: isActive ? 'rgba(103, 80, 164, 0.08)' : 'transparent',
       '&:hover': {
@@ -180,8 +193,8 @@ function AboutView() {
   );
 }
 
-// --- 3. SHOP / INVENTORY VIEW (EXCEL TAB ENGINE) ---
-function ShopView({ allInventory }) {
+// --- 3. SHOP / INVENTORY VIEW (WITH REFRESH BUTTON) ---
+function ShopView({ allInventory, onRefresh, isRefreshing }) {
   const [currentTabIdx, setCurrentTabIdx] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortKey, setSortKey] = useState(null);
@@ -219,7 +232,30 @@ function ShopView({ allInventory }) {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>Product Catalog</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">Product Catalog</Typography>
+        
+        {/* Refresh Button */}
+        <Button 
+          variant="outlined" 
+          color="primary" 
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          startIcon={
+            <RefreshIcon 
+              sx={{ 
+                animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                '@keyframes spin': {
+                  '0%': { transform: 'rotate(0deg)' },
+                  '100%': { transform: 'rotate(360deg)' },
+                }
+              }} 
+            />
+          }
+        >
+          {isRefreshing ? "Syncing..." : "Refresh Data"}
+        </Button>
+      </Box>
       
       {/* M3 Style Dynamic Tabs */}
       <Tabs 
@@ -322,7 +358,7 @@ function FaqView() {
       <Typography variant="h4" gutterBottom>Frequently Asked Questions</Typography>
       <Box sx={{ mt: 2 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Q: How quickly does inventory update?</Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>A: Instantly. When you refresh the application, it pulls raw data straight from your master Google Sheet rows.</Typography>
+        <Typography variant="body2" color="text.secondary" paragraph>A: Instantly upon pressing the "Refresh Data" button or reloading the page, drawing updated data directly from Google Sheets.</Typography>
         <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>Q: Are the photos eating up heavy bandwidth data?</Typography>
         <Typography variant="body2" color="text.secondary">A: No. We optimize them to WebP and use an on-demand trigger, saving you bandwidth data until you click View.</Typography>
       </Box>
